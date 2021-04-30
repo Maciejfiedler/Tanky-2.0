@@ -13,3 +13,6 @@ def drive_forward():
     print("forward")
     robot.backward(1)
     return dict(forward_func="console.log('fordward')")
+
+if '__main__' == __name__:
+    app.run(host="0.0.0.0")
