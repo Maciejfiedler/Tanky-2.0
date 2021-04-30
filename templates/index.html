@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tanky 2.0</title>
+</head>
+<body>
+    <h1>Tanky 2.0 Controller</h1>
+
+    <div id="box">
+        <div class="button-div" id="vertical-div">
+            <button id="forward" type="button" onclick={{forward_func}}>Vorne</button>
+            <button id="backward" type="button">Hinten</button>
+        </div>
+        <div class="button-div" id="horizontal-div">
+            <button id="left" type="button">Links</button>
+            <button id="right" type="button">Rechts</button>
+        </div>
+    </div>
+</body>
+</html>
+<style>
+#box{
+    font-size: large;
+    display: flex;
+    align-items: flex-start;
+    justify-content: left;
+    flex-direction: row;
+}
+.button-div {
+    display: flex;
+    padding: 5px;
+}
+#vertical-div{
+    flex-direction: column;
+}
+
+#horizontal-div{
+    height: 48px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+</style>
