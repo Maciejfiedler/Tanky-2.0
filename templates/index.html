@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+    var socket = io();
+        socket.on('connect', function() {
+            socket.emit('my event', { data: 'I\'m connected!' });
+        });
+    </script>
     <title>Tanky 2.0</title>
 </head>
 <body>
@@ -11,12 +18,13 @@
 
     <div id="box">
         <div class="button-div" id="vertical-div">
-            <button id="forward" type="button" onclick={{forward_func}}>Vorne</button>
-            <button id="backward" type="button">Hinten</button>
+            <button id="forward" type="button" onclick="socket.emit('forward')">Vorne</button>
+            <button id="vertical-stop" type="button" onclick="socket.emit('stop')">Stop</button>
+            <button id="backward" type="button" onclick="socket.emit('backward')">Hinten</button>
         </div>
         <div class="button-div" id="horizontal-div">
-            <button id="left" type="button">Links</button>
-            <button id="right" type="button">Rechts</button>
+            <button id="left" type="button" onclick="socket.emit('left')">Links</button>
+            <button id="right" type="button" onclick="socket.emit('right')">Rechts</button>
         </div>
     </div>
 </body>

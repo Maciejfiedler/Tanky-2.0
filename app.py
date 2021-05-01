@@ -1,18 +1,16 @@
 from flask import Flask, render_template
-from gpiozero import Robot
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
-robot = Robot(left=(7,8),right=(9,10))
+socketio = SocketIO(app)
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
-@app.context_processor
-def drive_forward():
+@socketio.on('forward')
+def handle_forward():
     print("forward")
-    robot.backward(1)
-    return dict(forward_func="console.log('fordward')")
 
 if '__main__' == __name__:
-    app.run(host="0.0.0.0")
+    socketio.run(app)
