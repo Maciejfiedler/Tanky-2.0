@@ -1,54 +1,181 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
-    <script type="text/javascript" charset="utf-8">
-    var socket = io();
-        socket.on('connect', function() {
-            socket.emit('my event', { data: 'I\'m connected!' });
-        });
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+        integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+        crossorigin="anonymous"></script>
     <title>Tanky 2.0</title>
 </head>
+
 <body>
     <h1>Tanky 2.0 Controller</h1>
 
-    <div id="box">
+    <div id="box" class="box">
         <div class="button-div" id="vertical-div">
-            <button id="forward" type="button" onclick="socket.emit('forward')">Vorne</button>
-            <button id="vertical-stop" type="button" onclick="socket.emit('stop')">Stop</button>
-            <button id="backward" type="button" onclick="socket.emit('backward')">Hinten</button>
+            <button id="forward" type="button" onmousedown="socket.emit('forward',{})">Vorne</button>
+            <button id="vertical-stop" type="button" onclick="socket.emit('stop', {})">Stop</button>
+            <button id="backward" type="button" onclick="socket.emit('backward', {})">Hinten</button>
         </div>
         <div class="button-div" id="horizontal-div">
-            <button id="left" type="button" onclick="socket.emit('left')">Links</button>
-            <button id="right" type="button" onclick="socket.emit('right')">Rechts</button>
+            <button id="left" type="button" onclick="socket.emit('left', {})">Links</button>
+            <button id="right" type="button" onclick="socket.emit('right', {})">Rechts</button>
         </div>
     </div>
+    <div id="microphone-div" class="box">
+        <div class="button-div">
+            <button id="microphone-button" type="button" onclick="startVoiceRecognition()">Spracherkennung</button>
+            <button type="button" onclick="recognition.stop()">Stoppen</button>
+        </div>
+    </div>
+    <div class="box" style="flex-direction: column;">
+        <p class="invisible" id="which-command"></p>
+        <p class="invisible" id="which-status"></p>
+        <p class="invisible" id="server-status"></p>
+    </div>
+
+    <script type="text/javascript" charset="utf-8">
+        // connect to Socket.IO
+        var socket = io();
+        try {
+            socket.on('connect', function () {
+                console.log("Verbinung zum Server etabliert. " + time)
+                serverStatus.innerHTML = "Server Status: aktiv"
+                serverStatus.className = 'visible'
+            });
+        } catch (err) {
+            createErrorMessage(err)
+            serverStatus.innerHTML = "Server Status: nicht aktiv"
+            serverStatus.className = 'visible'
+        }
+
+        // status section
+        var whichCommand = document.getElementById("which-command")
+        var whichStatus = document.getElementById("which-status")
+        var serverStatus = document.getElementById("server-status")
+
+        // time
+        var today = new Date();
+        var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+
+        function createErrorMessage(mesg) {
+            console.error(mesg + " " + time)
+        }
+        
+        // stream the command when button is pressed down
+        function sendOnHolddown(command){
+            let id = command
+            let button = document.getElementById(id)
+            let pressed = true
+            button.addEventListener('onmouseup', {
+                pressed = false
+            })
+        }
+
+        // setup voice recognition
+        var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition
+        var SpeechGrammarList = SpeechGrammarList || webkitSpeechGrammarList
+        var SpeechRecognitionEvent = SpeechRecognitionEvent || webkitSpeechRecognitionEvent
+
+        var grammar = '#JSGF V1.0; grammar command; public <command> = vorne | hinten | rechts |links ;'
+        var recognition = new SpeechRecognition();
+        var speechRecognitionList = new SpeechGrammarList();
+        speechRecognitionList.addFromString(grammar, 1);
+        recognition.grammars = speechRecognitionList;
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        recognition.lang = 'de';
+
+        function startVoiceRecognition() {
+            try {
+                recognition.start()
+                let startMesg = "Spracherkennung wurde aktiviert. Folgende Befehle sind verfügbar: Vorne, Hinten, Rechts, Links."
+                console.log(startMesg + " " + time)
+                whichStatus.innerHTML = "Spracherkennung Status: aktiv"
+                whichStatus.className = 'visible'
+            } catch (err) {
+                createErrorMessage(err)
+            }
+        }
+
+        function stopRecording() {
+            recognition.stop();
+            console.log('Spracherkennung wurde beendet.');
+            whichStatus.innerHTML = "Spracherkennung Status: nicht aktiv"
+            whichStatus.className = 'visible'
+        }
+
+        recognition.onresult = function (event) {
+            let command = event.results[0][0].transcript
+            console.log("Befehl: " + command + ", " + time)
+            whichCommand.innerHTML = "Befehl: " + command
+            whichCommand.className = 'visible'
+            handleCommand(command)
+        }
+        recognition.nomatch = function (){
+            console.log("Befehl nicht erkannt." + time)
+            whichCommand.innerHTML = "Befehl nicht erkannt."
+            whichCommand.className = 'visible'
+            whichCommand.className += 'error'
+        }
+        recognition.onend = function () {
+            stopRecording()
+        }
+
+        function handleCommand(command){
+            let instruction = null
+            let quantity = null
+            
+            commands = command.split(' ')
+            instruction = commands[0]
+            quantity = commands[1]
+            switch(instruction) {
+                case "vorne":
+                    socket.emit('forward',{steps: quantity})
+            }
+        }
+    </script>
 </body>
+
 </html>
 <style>
-#box{
-    font-size: large;
-    display: flex;
-    align-items: flex-start;
-    justify-content: left;
-    flex-direction: row;
-}
-.button-div {
-    display: flex;
-    padding: 5px;
-}
-#vertical-div{
-    flex-direction: column;
-}
+    .box {
+        display: flex;
+        align-items: flex-start;
+        justify-content: left;
+        flex-direction: row;
+    }
 
-#horizontal-div{
-    height: 48px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-}
+    .button-div {
+        display: flex;
+        padding: 5px;
+    }
+
+    .error{
+        color: red;
+    }
+
+    .visible {
+        margin: 1px;
+        display: block;
+    }
+
+    .invisible {
+        display: none;
+    }
+
+    #vertical-div {
+        flex-direction: column;
+    }
+
+    #horizontal-div {
+        height: 48px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
