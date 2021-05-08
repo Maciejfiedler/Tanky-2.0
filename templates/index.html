@@ -16,13 +16,23 @@
 
     <div id="box" class="box">
         <div class="button-div" id="vertical-div">
-            <button id="forward" type="button" onmousedown="socket.emit('forward',{})">Vorne</button>
-            <button id="vertical-stop" type="button" onclick="socket.emit('stop', {})">Stop</button>
-            <button id="backward" type="button" onclick="socket.emit('backward', {})">Hinten</button>
+            <button class="unselectable" id="forward" type="button" onmousedown="setCommandsPressed('forward')"
+                onmouseup="stopCommandsPressed('forward')" onmouseout="stopCommandsPressed('forward')"
+                ontouchstart="setCommandsPressed('forward')" ontouchend="stopCommandsPressed('forward')">Vorne</button>
+
+            <button class="unselectable" id="backward" type="button" onmousedown="setCommandsPressed('backward')"
+                onmouseup="stopCommandsPressed('backward')" onmouseout="stopCommandsPressed('backward')"
+                ontouchstart="setCommandsPressed('backward')"
+                ontouchend="stopCommandsPressed('backward')">Hinten</button>
         </div>
         <div class="button-div" id="horizontal-div">
-            <button id="left" type="button" onclick="socket.emit('left', {})">Links</button>
-            <button id="right" type="button" onclick="socket.emit('right', {})">Rechts</button>
+            <button class="unselectable" id="left" type="button" onmousedown="setCommandsPressed('left')"
+                onmouseup="stopCommandsPressed('left')" onmouseout="stopCommandsPressed('left')"
+                ontouchstart="setCommandsPressed('left')" ontouchend="stopCommandsPressed('left')">Links</button>
+
+            <button class="unselectable" id="right" type="button" onmousedown="setCommandsPressed('right')"
+                onmouseup="stopCommandsPressed('right')" onmouseout="stopCommandsPressed('right')"
+                ontouchstart="setCommandsPressed('right')" ontouchend="stopCommandsPressed('right')">Rechts</button>
         </div>
     </div>
     <div id="microphone-div" class="box">
@@ -35,6 +45,10 @@
         <p class="invisible" id="which-command"></p>
         <p class="invisible" id="which-status"></p>
         <p class="invisible" id="server-status"></p>
+        <p class="invisible" id="error-status"></p>
+        <p>Spracherkennung funktioniert nur auf Google Chrome, Chromium, Brave, Edge, Vivaldi und anderen Chromium
+            Browsern.</p>
+        <p>Verfügbare Spracherkennungs Befehle: Vorne, Hintent, Links, Rechts und optional eine Zahl für die wiederholung des Befehls</p>
     </div>
 
     <script type="text/javascript" charset="utf-8">
@@ -56,6 +70,7 @@
         var whichCommand = document.getElementById("which-command")
         var whichStatus = document.getElementById("which-status")
         var serverStatus = document.getElementById("server-status")
+        var errorStatus = document.getElementById("error-status")
 
         // time
         var today = new Date();
@@ -64,15 +79,20 @@
         function createErrorMessage(mesg) {
             console.error(mesg + " " + time)
         }
-        
+
         // stream the command when button is pressed down
-        function sendOnHolddown(command){
-            let id = command
-            let button = document.getElementById(id)
-            let pressed = true
-            button.addEventListener('onmouseup', {
-                pressed = false
-            })
+        var commandsPressed = new Map()
+        function setCommandsPressed(command) {
+            let loop = setInterval(function () { socket.emit(command, {}) }, 200)
+            commandsPressed.set(command, { id: loop })
+        }
+        function stopCommandsPressed(command) {
+            if (commandsPressed.has(command)) {
+
+                let id = commandsPressed.get(command).id
+                clearInterval(id)
+                commandsPressed.delete(id)
+            }
         }
 
         // setup voice recognition
@@ -97,6 +117,7 @@
                 console.log(startMesg + " " + time)
                 whichStatus.innerHTML = "Spracherkennung Status: aktiv"
                 whichStatus.className = 'visible'
+                whichCommand.innerHTML = "Befehl: "
             } catch (err) {
                 createErrorMessage(err)
             }
@@ -116,26 +137,39 @@
             whichCommand.className = 'visible'
             handleCommand(command)
         }
-        recognition.nomatch = function (){
+        recognition.nomatch = function () {
             console.log("Befehl nicht erkannt." + time)
             whichCommand.innerHTML = "Befehl nicht erkannt."
             whichCommand.className = 'visible'
             whichCommand.className += 'error'
         }
+        recognition.error = function (e) {
+            createErrorMessage(e)
+            whichCommand.innerHTML = "Fehler: " + e
+            whichCommand.className = 'visible'
+            whichCommand.className += 'error'
+
+        }
         recognition.onend = function () {
             stopRecording()
         }
 
-        function handleCommand(command){
+        function handleCommand(command) {
             let instruction = null
             let quantity = null
-            
+
             commands = command.split(' ')
             instruction = commands[0]
             quantity = commands[1]
-            switch(instruction) {
+            switch (instruction) {
                 case "vorne":
-                    socket.emit('forward',{steps: quantity})
+                    socket.emit('forward', { steps: quantity })
+                case "hinten":
+                    socket.emit('backward', { steps: quantity })
+                case "links":
+                    socket.emit('left', { steps: quantity })
+                case "rechts":
+                    socket.emit('rechts', { steps: quantity })
             }
         }
     </script>
@@ -153,6 +187,15 @@
     .button-div {
         display: flex;
         padding: 5px;
+    }
+
+    .unselectable {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
 
     .error{
