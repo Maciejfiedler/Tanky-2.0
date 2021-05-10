@@ -25,7 +25,7 @@ def runCommand(command):
         robot.forward(1)
     elif(command=='backward'):
         print("driving backwards")
-        robot.backward()(1)
+        robot.backward(1)
     elif(command=='right'):
         print("driving right")
         robot.left(1)
