@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 
 <head>
     <meta charset="UTF-8">
@@ -35,20 +35,12 @@
                 ontouchstart="setCommandsPressed('right')" ontouchend="stopCommandsPressed('right')">Rechts</button>
         </div>
     </div>
-    <div id="microphone-div" class="box">
-        <div class="button-div">
-            <button id="microphone-button" type="button" onclick="startVoiceRecognition()">Spracherkennung</button>
-            <button type="button" onclick="recognition.stop()">Stoppen</button>
-        </div>
-    </div>
     <div class="box" style="flex-direction: column;">
-        <p class="invisible" id="which-command"></p>
-        <p class="invisible" id="which-status"></p>
         <p class="invisible" id="server-status"></p>
-        <p class="invisible" id="error-status"></p>
         <p>Spracherkennung funktioniert nur auf Google Chrome, Chromium, Brave, Edge, Vivaldi und anderen Chromium
             Browsern.</p>
-        <p>Verfügbare Spracherkennungs Befehle: Vorne, Hintent, Links, Rechts und optional eine Zahl für die wiederholung des Befehls</p>
+        <p>Verfügbare Spracherkennungs Befehle: Vorne, Hintent, Links, Rechts und optional eine Zahl für die
+            wiederholung des Befehls</p>
     </div>
 
     <script type="text/javascript" charset="utf-8">
@@ -57,20 +49,16 @@
         try {
             socket.on('connect', function () {
                 console.log("Verbinung zum Server etabliert. " + time)
-                serverStatus.innerHTML = "Server Status: aktiv"
-                serverStatus.className = 'visible'
+                serverStatusButton.innerHTML = "Server Status: aktiv"
+                serverStatusButton.className = 'visible'
             });
         } catch (err) {
             createErrorMessage(err)
-            serverStatus.innerHTML = "Server Status: nicht aktiv"
-            serverStatus.className = 'visible'
+            serverStatusButton.innerHTML = "Server Status: nicht aktiv"
+            serverStatusButton.className = 'visible'
         }
 
-        // status section
-        var whichCommand = document.getElementById("which-command")
-        var whichStatus = document.getElementById("which-status")
-        var serverStatus = document.getElementById("server-status")
-        var errorStatus = document.getElementById("error-status")
+        var serverStatusButton = document.getElementById("server-status")
 
         // time
         var today = new Date();
@@ -80,10 +68,15 @@
             console.error(mesg + " " + time)
         }
 
+        function sendCommand(command) {
+            socket.emit('message', command)
+        }
+
         // stream the command when button is pressed down
         var commandsPressed = new Map()
         function setCommandsPressed(command) {
-            let loop = setInterval(function () { socket.emit(command, {}) }, 200)
+            sendCommand(command)
+            let loop = setInterval(function () { sendCommand(command) }, 250)
             commandsPressed.set(command, { id: loop })
         }
         function stopCommandsPressed(command) {
@@ -92,84 +85,6 @@
                 let id = commandsPressed.get(command).id
                 clearInterval(id)
                 commandsPressed.delete(id)
-            }
-        }
-
-        // setup voice recognition
-        var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition
-        var SpeechGrammarList = SpeechGrammarList || webkitSpeechGrammarList
-        var SpeechRecognitionEvent = SpeechRecognitionEvent || webkitSpeechRecognitionEvent
-
-        var grammar = '#JSGF V1.0; grammar command; public <command> = vorne | hinten | rechts |links ;'
-        var recognition = new SpeechRecognition();
-        var speechRecognitionList = new SpeechGrammarList();
-        speechRecognitionList.addFromString(grammar, 1);
-        recognition.grammars = speechRecognitionList;
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-        recognition.lang = 'de';
-
-        function startVoiceRecognition() {
-            try {
-                recognition.start()
-                let startMesg = "Spracherkennung wurde aktiviert. Folgende Befehle sind verfügbar: Vorne, Hinten, Rechts, Links."
-                console.log(startMesg + " " + time)
-                whichStatus.innerHTML = "Spracherkennung Status: aktiv"
-                whichStatus.className = 'visible'
-                whichCommand.innerHTML = "Befehl: "
-            } catch (err) {
-                createErrorMessage(err)
-            }
-        }
-
-        function stopRecording() {
-            recognition.stop();
-            console.log('Spracherkennung wurde beendet.');
-            whichStatus.innerHTML = "Spracherkennung Status: nicht aktiv"
-            whichStatus.className = 'visible'
-        }
-
-        recognition.onresult = function (event) {
-            let command = event.results[0][0].transcript
-            console.log("Befehl: " + command + ", " + time)
-            whichCommand.innerHTML = "Befehl: " + command
-            whichCommand.className = 'visible'
-            handleCommand(command)
-        }
-        recognition.nomatch = function () {
-            console.log("Befehl nicht erkannt." + time)
-            whichCommand.innerHTML = "Befehl nicht erkannt."
-            whichCommand.className = 'visible'
-            whichCommand.className += 'error'
-        }
-        recognition.error = function (e) {
-            createErrorMessage(e)
-            whichCommand.innerHTML = "Fehler: " + e
-            whichCommand.className = 'visible'
-            whichCommand.className += 'error'
-
-        }
-        recognition.onend = function () {
-            stopRecording()
-        }
-
-        function handleCommand(command) {
-            let instruction = null
-            let quantity = null
-
-            commands = command.split(' ')
-            instruction = commands[0]
-            quantity = commands[1]
-            switch (instruction) {
-                case "vorne":
-                    socket.emit('forward', { steps: quantity })
-                case "hinten":
-                    socket.emit('backward', { steps: quantity })
-                case "links":
-                    socket.emit('left', { steps: quantity })
-                case "rechts":
-                    socket.emit('rechts', { steps: quantity })
             }
         }
     </script>
@@ -198,7 +113,7 @@
         user-select: none;
     }
 
-    .error{
+    .error {
         color: red;
     }
 

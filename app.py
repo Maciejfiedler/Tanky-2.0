@@ -13,32 +13,29 @@ def index():
     return render_template("index.html")
 
 
-@socketio.on('forward')
-def handle_forward(quantity):
-    if (quantity != None):
-        try:
-            runCommandsInSteps('forward', quantity)
-        except:
-            pass
-
-
-def runCommandsInSteps(command, steps):
-    steps = int(quantity['steps'])
-    for x in range(steps):
-        pass
-        robot.forward(1)
-        t = Timer(0.2, robot.stop)
-        t.start()
+@socketio.on('message')
+def handle_message(command):
+    runCommand(command)
+    t = Timer(0.25, robot.stop)
+    t.start()
 
 def runCommand(command):
     if(command=='forward'):
+        print("driving forward")
         robot.forward(1)
     elif(command=='backward'):
-        robot.backward(1)
+        print("driving backwards")
+        robot.backward()(1)
+    elif(command=='right'):
+        print("driving right")
+        robot.left(1)
+    elif(command=='left'):
+        print("driving left")
+        robot.right(1)
+    else:
+        print("error")
 
-    t = Timer(0.2,robot.stop)
-    t.start
 
 
 if '__main__' == __name__:
-    socketio.run(app, host="0.0.0.0", debug=True)
+    socketio.run(app, host="0.0.0.0",debug=True)
