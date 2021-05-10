@@ -36,6 +36,9 @@ def runCommand(command):
     else:
         print("error")
 
+    t = Timer(0.25, robot.stop)
+    t.start()
+
 
 
 if '__main__' == __name__:
