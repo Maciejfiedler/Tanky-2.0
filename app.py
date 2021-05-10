@@ -28,10 +28,10 @@ def runCommand(command):
         robot.backward(1)
     elif(command=='right'):
         print("driving right")
-        robot.left(1)
+        robot.right(1)
     elif(command=='left'):
         print("driving left")
-        robot.right(1)
+        robot.left(1)
     else:
         print("error")
 
