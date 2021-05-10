@@ -16,8 +16,6 @@ def index():
 @socketio.on('message')
 def handle_message(command):
     runCommand(command)
-    t = Timer(0.25, robot.stop)
-    t.start()
 
 def runCommand(command):
     if(command=='forward'):
