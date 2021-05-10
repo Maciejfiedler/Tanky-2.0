@@ -23,12 +23,15 @@ def runCommand(command):
     if(command=='forward'):
         print("driving forward")
         robot.forward(1)
+
     elif(command=='backward'):
         print("driving backwards")
         robot.backward(1)
+
     elif(command=='right'):
         print("driving right")
         robot.right(1)
+        
     elif(command=='left'):
         print("driving left")
         robot.left(1)
