@@ -18,6 +18,8 @@ def handle_message(command):
     runCommand(command)
 
 def runCommand(command):
+    t = Timer(0.25, robot.stop)
+
     if(command=='forward'):
         print("driving forward")
         robot.forward(1)
@@ -36,7 +38,6 @@ def runCommand(command):
     else:
         print("error")
 
-    t = Timer(0.25, robot.stop)
     t.start()
 
 
