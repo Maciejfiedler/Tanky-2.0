@@ -15,11 +15,11 @@ def index():
 
 @socketio.on('message')
 def handle_message(command):
+    t = Timer(0.25, robot.stop)
+    t.start()
     runCommand(command)
 
 def runCommand(command):
-    t = Timer(0.25, robot.stop)
-
     if(command=='forward'):
         print("driving forward")
         robot.forward(1)
@@ -37,8 +37,6 @@ def runCommand(command):
         robot.left(1)
     else:
         print("error")
-
-    t.start()
 
 
 
